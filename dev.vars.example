@@ -1,0 +1,5 @@
+# Copy to .dev.vars for `npx wrangler dev`. Never commit the real file.
+# At least 32 random characters, for example the output of: openssl rand -base64 48
+ID_HASH_SECRET=change-me-to-a-random-string-of-32+-chars
+# Optional: reported by GET / responses
+DASHBOARD_URL=https://natunegroup.github.io/natune-status/

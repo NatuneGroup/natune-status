@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Natune record with seedling icon</title>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B4D2C" />
+      <stop offset="1" stop-color="#13894A" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#background)" />
+  <circle cx="256" cy="280" r="140" fill="#F7F3EA" />
+  <g fill="none" stroke="#0B4D2C" stroke-linecap="round" stroke-width="4.5">
+    <path d="M192.754 190 A110 110 0 0 0 192.754 370" />
+    <path d="M319.246 190 A110 110 0 0 1 319.246 370" />
+    <path d="M209.57 210 A84 84 0 0 0 209.57 350" />
+    <path d="M302.43 210 A84 84 0 0 1 302.43 350" />
+    <path d="M219.41 235 A58 58 0 0 0 219.41 325" />
+    <path d="M292.59 235 A58 58 0 0 1 292.59 325" />
+  </g>
+  <path d="M256 281 L256 226" fill="none" stroke="#0B4D2C" stroke-linecap="round" stroke-width="8" />
+  <path
+    d="M256 226 C238 222 220 214 204 201 C174 177 158 147 154 116 C186 114 213 122 233 138 C256 157 268 183 267 208 C267 216 263 222 256 226 Z"
+    fill="#A8E6A1"
+  />
+  <path
+    d="M256 226 C270 220 284 210 297 197 C321 172 341 143 358 116 C328 111 301 116 279 129 C257 143 244 166 244 190 C244 205 248 218 256 226 Z"
+    fill="#6CCB5F"
+  />
+  <g fill="none" stroke="#0B4D2C" stroke-linecap="round" stroke-width="4">
+    <path d="M256 220 C231 200 207 178 176 136" />
+    <path d="M256 220 C283 203 313 175 339 136" />
+  </g>
+  <circle cx="256" cy="280" r="20" fill="#0B4D2C" />
+</svg>

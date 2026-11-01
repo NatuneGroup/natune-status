@@ -1,0 +1,55 @@
+name: Snapshot listener status
+
+# Pulls the live aggregate from the API and commits it as docs/status.json, which the GitHub Pages
+# dashboard reads. This keeps every map view on static hosting instead of the Worker quota.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: status-snapshot
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Fetch live status
+        env:
+          STATUS_API_URL: ${{ vars.STATUS_API_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${STATUS_API_URL:-}" ]; then
+            echo "::error::Set the repository variable STATUS_API_URL to the Worker origin, e.g. https://natune-status.<account>.workers.dev"
+            exit 1
+          fi
+          tmp="$(mktemp)"
+          if curl -fsS --retry 2 --max-time 20 "${STATUS_API_URL%/}/api/listeners/active" -o "$tmp"; then
+            python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$tmp"
+            mv "$tmp" docs/status.json
+          else
+            # Keep the previous snapshot on API failure: the dashboard shows its updatedAt as stale
+            # instead of an empty map, and this job stays green.
+            echo "::warning::Aggregate fetch failed; keeping previous docs/status.json"
+            rm -f "$tmp"
+            exit 0
+          fi
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- docs/status.json; then
+            echo "No change"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/status.json
+          git commit -m "chore: refresh listener snapshot"
+          git push

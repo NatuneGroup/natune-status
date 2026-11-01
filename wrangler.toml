@@ -1,0 +1,17 @@
+name = "natune-status"
+main = "src/worker.ts"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# Hourly sweep for rows whose TTL passed while no aggregate read ran.
+[triggers]
+crons = ["7 * * * *"]
+
+# Create the database once with:
+#   npx wrangler d1 create natune-status
+# then paste the printed database_id below.
+[[d1_databases]]
+binding = "LISTENER_DB"
+database_name = "natune-status"
+database_id = "REPLACE_WITH_DATABASE_ID"
+migrations_dir = "migrations"

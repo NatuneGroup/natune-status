@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="theme-color" content="#080b0e" />
+    <meta
+      name="description"
+      content="A live, privacy-preserving view of listeners who chose to share their presence in Natune."
+    />
+    <title>Natune · Live Listener Map</title>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+    <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="map.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="https://github.com/NatuneGroup/natune-status" target="_blank" rel="noreferrer" aria-label="Natune">
+        <img src="natune-icon.svg" alt="" width="38" height="38" />
+        <span class="brand-copy">
+          <span class="brand-name">Natune</span>
+          <span class="brand-label">LIVE LISTENER MAP</span>
+        </span>
+      </a>
+
+      <div class="live-meta" role="status" aria-live="polite">
+        <span id="status-indicator" class="status-indicator" aria-hidden="true"></span>
+        <span id="status">Connecting</span>
+        <span class="meta-divider" aria-hidden="true">·</span>
+        <span id="updated">Updated just now</span>
+      </div>
+
+      <nav class="header-actions" aria-label="Map actions">
+        <a class="github-action" href="https://github.com/NatuneGroup/natune-status" target="_blank" rel="noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 2.75a9.25 9.25 0 0 0-2.925 18.025c.463.086.632-.2.632-.445v-1.72c-2.573.56-3.117-1.09-3.117-1.09-.422-1.073-1.03-1.36-1.03-1.36-.842-.576.064-.564.064-.564.931.065 1.422.956 1.422.956.827 1.418 2.168 1.008 2.697.77.084-.599.324-1.008.589-1.24-2.054-.234-4.214-1.027-4.214-4.572 0-1.01.36-1.835.952-2.482-.096-.234-.413-1.174.09-2.448 0 0 .777-.249 2.544.948a8.84 8.84 0 0 1 4.63 0c1.768-1.197 2.543-.948 2.543-.948.504 1.274.187 2.214.092 2.448.593.647.95 1.472.95 2.482 0 3.554-2.163 4.335-4.223 4.565.333.287.629.85.629 1.713v2.542c0 .247.167.535.635.444A9.25 9.25 0 0 0 12 2.75Z"
+              fill="currentColor"
+            />
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <button
+          id="auto-zoom"
+          class="header-button auto-zoom is-active"
+          type="button"
+          aria-label="Auto zoom"
+          aria-pressed="true"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 4H5a1 1 0 0 0-1 1v3m12-4h3a1 1 0 0 1 1 1v3M4 16v3a1 1 0 0 0 1 1h3m12-4v3a1 1 0 0 1-1 1h-3" />
+            <circle cx="12" cy="12" r="3.25" />
+          </svg>
+          <span class="action-label">Auto zoom</span>
+        </button>
+        <button id="refresh" class="header-button icon-button" type="button" aria-label="Refresh listener data" title="Refresh">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 11a8 8 0 0 0-14.78-3L3 11m0 0V6m0 5h5m-4 2a8 8 0 0 0 14.78 3L21 13m0 0v5m0-5h-5" />
+          </svg>
+        </button>
+      </nav>
+    </header>
+
+    <main id="map-stage" class="map-stage">
+      <div id="map" class="map-canvas" role="region" aria-label="Live map of listener locations"></div>
+
+      <section class="stats-card floating-glass" aria-label="Listener statistics">
+        <div class="stats-top">
+          <div>
+            <div id="listener-count" class="stats-total" aria-live="polite">0</div>
+            <p class="stats-caption">people listening right now</p>
+          </div>
+          <button
+            class="quiet-icon privacy-trigger"
+            type="button"
+            aria-label="How listener location privacy works"
+            aria-expanded="false"
+            title="Privacy details"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 11v5m0-8h.01" />
+            </svg>
+          </button>
+        </div>
+        <div class="stats-divider"></div>
+        <div class="stats-breakdown">
+          <div class="mini-stat">
+            <span class="mini-label">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 21s7-5.1 7-11a7 7 0 1 0-14 0c0 5.9 7 11 7 11Z" />
+                <circle cx="12" cy="10" r="2.25" />
+              </svg>
+              Cities
+            </span>
+            <strong id="cities-count">0</strong>
+          </div>
+          <div class="mini-stat">
+            <span class="mini-label">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M3.5 12h17M12 3c2.2 2.4 3.3 5.4 3.3 9s-1.1 6.6-3.3 9c-2.2-2.4-3.3-5.4-3.3-9S9.8 5.4 12 3Z" />
+              </svg>
+              Countries
+            </span>
+            <strong id="countries-count">0</strong>
+          </div>
+        </div>
+      </section>
+
+      <div class="mobile-summary floating-glass" aria-label="Listener summary">
+        <span id="mobile-count">0</span>
+        <span>listening in</span>
+        <span id="mobile-city-count">0</span>
+        <span>cities</span>
+        <button
+          class="quiet-icon privacy-trigger"
+          type="button"
+          aria-label="How listener location privacy works"
+          aria-expanded="false"
+          title="Privacy details"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 11v5m0-8h.01" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="map-controls" aria-label="Map controls">
+        <div class="control-group">
+          <button id="zoom-in" class="map-control" type="button" aria-label="Zoom in" title="Zoom in">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.8" cy="10.8" r="6.8" />
+              <path d="m16 16 4.5 4.5M10.8 7.5v6.6m-3.3-3.3h6.6" />
+            </svg>
+          </button>
+          <button id="zoom-out" class="map-control" type="button" aria-label="Zoom out" title="Zoom out">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.8" cy="10.8" r="6.8" />
+              <path d="m16 16 4.5 4.5m-13-9.7h6.6" />
+            </svg>
+          </button>
+        </div>
+        <div class="control-group">
+          <button id="fit-locations" class="map-control" type="button" aria-label="Fit map to listeners" title="Fit to listeners">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 4H5a1 1 0 0 0-1 1v3m12-4h3a1 1 0 0 1 1 1v3M4 16v3a1 1 0 0 0 1 1h3m12-4v3a1 1 0 0 1-1 1h-3" />
+              <path d="m9 9 6 6m0-6-6 6" />
+            </svg>
+          </button>
+          <button id="world-view" class="map-control" type="button" aria-label="Reset to world view" title="World view">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3.5 12h17M12 3c2.2 2.4 3.3 5.4 3.3 9s-1.1 6.6-3.3 9c-2.2-2.4-3.3-5.4-3.3-9S9.8 5.4 12 3Z" />
+            </svg>
+          </button>
+        </div>
+        <div class="control-group">
+          <button
+            id="toggle-labels"
+            class="map-control labels-control is-active"
+            type="button"
+            aria-label="Hide map labels"
+            aria-pressed="true"
+            title="Labels on"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m3 19 5-13 5 13M5 14h6m4-8h5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-5V6Z" />
+              <path d="M15.5 10h3m-3 3h3" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <section id="locations-panel" class="locations-panel floating-glass" aria-label="Active locations">
+        <div class="sheet-grabber" aria-hidden="true"><span></span></div>
+        <div class="panel-heading">
+          <div class="panel-title">
+            <span>Active Locations</span>
+            <span id="location-total" class="panel-total">(0)</span>
+          </div>
+          <div class="panel-actions">
+            <button
+              class="quiet-icon privacy-trigger"
+              type="button"
+              aria-label="How listener location privacy works"
+              aria-expanded="false"
+              title="Privacy details"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.5" />
+                <path d="M12 11v5m0-8h.01" />
+              </svg>
+            </button>
+            <button
+              id="collapse-panel"
+              class="quiet-icon collapse-button"
+              type="button"
+              aria-label="Collapse locations panel"
+              aria-expanded="true"
+              title="Collapse panel"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m7 10 5 5 5-5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="panel-tabs" role="tablist" aria-label="Location type">
+          <button
+            id="cities-tab"
+            class="panel-tab is-selected"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="location-list"
+            tabindex="0"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 21s7-5.1 7-11a7 7 0 1 0-14 0c0 5.9 7 11 7 11Z" />
+              <circle cx="12" cy="10" r="2.25" />
+            </svg>
+            <span>Cities</span>
+            <span id="cities-tab-count" class="tab-count">(0)</span>
+          </button>
+          <button
+            id="countries-tab"
+            class="panel-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="location-list"
+            tabindex="-1"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M3.5 12h17M12 3c2.2 2.4 3.3 5.4 3.3 9s-1.1 6.6-3.3 9c-2.2-2.4-3.3-5.4-3.3-9S9.8 5.4 12 3Z" />
+            </svg>
+            <span>Countries</span>
+            <span id="countries-tab-count" class="tab-count">(0)</span>
+          </button>
+        </div>
+        <div class="panel-content">
+          <ul
+            id="location-list"
+            class="location-list"
+            role="tabpanel"
+            aria-labelledby="cities-tab"
+            tabindex="0"
+            hidden
+          ></ul>
+          <div id="empty-state" class="empty-state" aria-live="polite">
+            <span class="empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="2.3" />
+                <path d="M8.3 8.3a5.2 5.2 0 0 0 0 7.4m7.4-7.4a5.2 5.2 0 0 1 0 7.4M5.5 5.5a9.2 9.2 0 0 0 0 13m13-13a9.2 9.2 0 0 1 0 13" />
+              </svg>
+            </span>
+            <strong id="empty-title">No listeners online right now</strong>
+            <span id="empty-description">Waiting for listeners to connect</span>
+          </div>
+        </div>
+        <footer class="panel-footer">
+          <span class="footer-label">Estimated city location ·</span>
+          <span id="footer-count">0 listening</span>
+        </footer>
+      </section>
+
+      <div id="privacy-popover" class="privacy-popover floating-glass" role="dialog" aria-label="Privacy details" hidden>
+        <button id="close-privacy" class="quiet-icon privacy-close" type="button" aria-label="Close privacy details">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
+        </button>
+        <p>A city appears only with at least 3 listeners. Totals are approximate. No track, account or IP address is shown.</p>
+        <p>Listeners who turned on listener presence in Natune. The feature is off by default.</p>
+      </div>
+    </main>
+
+    <noscript>
+      <p class="noscript-note">This live listener map needs JavaScript enabled.</p>
+    </noscript>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="map.js" defer></script>
+  </body>
+</html>
