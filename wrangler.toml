@@ -13,5 +13,5 @@ crons = ["7 * * * *"]
 [[d1_databases]]
 binding = "LISTENER_DB"
 database_name = "natune-status"
-database_id = "REPLACE_WITH_DATABASE_ID"
+database_id = "9b5b1b05-13ee-4fda-ba59-a9a0fd5d2c9d"
 migrations_dir = "migrations"
