@@ -106,7 +106,7 @@
   var activeTab = "cities";
   var autoZoom = true;
   var labelsVisible = true;
-  var latestData = { activeListeners: 0, countries: [], cities: [], updatedAt: null };
+  var latestData = { activeListeners: 0, countries: [], cities: [], updatedAt: null, otherCountryListeners: 0 };
   var lastUpdatedAt = null;
   var timer = null;
   var relativeTimer = null;
@@ -861,7 +861,8 @@
       activeListeners: activeListeners,
       updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : null,
       countries: countries,
-      cities: cities
+      cities: cities,
+      otherCountryListeners: listenerCountValue(data.otherCountryListeners)
     };
     lastUpdatedAt =
       latestData.updatedAt && !isNaN(new Date(latestData.updatedAt).getTime())
