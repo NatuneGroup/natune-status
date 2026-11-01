@@ -29,16 +29,19 @@ function reject(status: 400 | 413 | 415, error: string): ParseResult {
 }
 
 export async function parseHeartbeat(request: Request): Promise<ParseResult> {
-  const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.toLowerCase().startsWith("application/json")) {
+  const mediaType = (request.headers.get("content-type") ?? "")
+    .split(";", 1)[0]
+    ?.trim()
+    .toLowerCase();
+  if (mediaType !== "application/json") {
     return reject(415, "Expected application/json");
   }
   const declared = Number(request.headers.get("content-length") ?? "0");
   if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
     return reject(413, "Body too large");
   }
-  const text = await request.text();
-  if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) {
+  const text = await readBoundedBody(request);
+  if (text === null) {
     return reject(413, "Body too large");
   }
   let body: unknown;
@@ -48,6 +51,43 @@ export async function parseHeartbeat(request: Request): Promise<ParseResult> {
     return reject(400, "Invalid JSON");
   }
   return validateHeartbeat(body);
+}
+
+/**
+ * Reads the body as a stream and cancels it as soon as more than MAX_BODY_BYTES arrive, so an oversized
+ * request is rejected without buffering it — including chunked bodies that lie about Content-Length.
+ * Returns null when the limit was crossed, "" when the request carries no body at all.
+ */
+async function readBoundedBody(request: Request): Promise<string | null> {
+  const stream = request.body;
+  if (stream === null) return "";
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  let overflow = false;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      received += value.byteLength;
+      if (received > MAX_BODY_BYTES) {
+        overflow = true;
+        await reader.cancel();
+        break;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  if (overflow) return null;
+  const merged = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(merged);
 }
 
 export function validateHeartbeat(body: unknown): ParseResult {

@@ -72,7 +72,11 @@ export async function recordStopped(db: D1Database, hash: string): Promise<void>
   await db.prepare("DELETE FROM listeners WHERE hash = ?1").bind(hash).run();
 }
 
-/** Deletes rows whose TTL has passed. Runs on every aggregate read and once an hour from the scheduled trigger. */
+/**
+ * Deletes rows whose TTL has passed. Called once an hour from the scheduled trigger only; reads never prune
+ * because every aggregate filter already excludes expired rows. The DELETE is a full table scan — there is
+ * deliberately no expiry index, since each index write would count as a second billed row per heartbeat.
+ */
 export async function pruneExpired(db: D1Database, nowMs: number): Promise<void> {
   await db.prepare("DELETE FROM listeners WHERE expires_at_ms <= ?1").bind(nowMs).run();
 }
@@ -93,10 +97,10 @@ export interface ActiveRead {
 
 /**
  * Live entries whose TTL has not passed. The total is counted before the cap, so the headline number stays exact even
- * when the breakdown is a sample. Expired rows are deleted first so the table never keeps more than live data.
+ * when the breakdown is a sample. Both queries are full table scans; at the expected size (thousands of rows)
+ * they stay far under the daily rows-read quota.
  */
 export async function readActive(db: D1Database, nowMs: number): Promise<ActiveRead> {
-  await pruneExpired(db, nowMs);
   const countRow = await db
     .prepare("SELECT COUNT(*) AS total FROM listeners WHERE expires_at_ms > ?1")
     .bind(nowMs)

@@ -1,9 +1,12 @@
 /**
- * Builds the public summary from live entries. A city is shown only with at least [CITY_MINIMUM] listeners, so a
- * single person's location is never published. Listeners below that floor still count toward the total and their
- * country.
+ * Builds the public summary from live entries. A country is shown only with at least [COUNTRY_MINIMUM]
+ * listeners and a city only with at least [CITY_MINIMUM] listeners carrying coordinates, so a single
+ * person's location is never published and no coordinate average is computed over fewer than three
+ * sources. Suppressed listeners still count toward the total and, for countries, toward
+ * [ActiveSummary.otherCountryListeners].
  */
 export const CITY_MINIMUM = 3;
+export const COUNTRY_MINIMUM = 3;
 
 export interface StoredListener {
   readonly platform?: string;
@@ -31,6 +34,8 @@ export interface ActiveSummary {
   readonly updatedAt: string;
   readonly ttlSeconds: number;
   readonly countries: CountryCount[];
+  /** Listeners in countries below [COUNTRY_MINIMUM]; reported in sum, never per country. */
+  readonly otherCountryListeners: number;
   readonly cities: CityCount[];
   readonly topCity: CityCount | null;
 }
@@ -79,7 +84,9 @@ export function summarize(
 
   const cities: CityCount[] = [];
   for (const group of cityGroups.values()) {
-    if (group.count < CITY_MINIMUM || group.located === 0) continue;
+    // Coordinates are averaged, so a city is published only when at least CITY_MINIMUM listeners
+    // contributed a coordinate; one or two located listeners never leak their position.
+    if (group.located < CITY_MINIMUM) continue;
     cities.push({
       city: group.city,
       country: group.country,
@@ -92,15 +99,23 @@ export function summarize(
     (a, b) => b.count - a.count || a.country.localeCompare(b.country) || a.city.localeCompare(b.city),
   );
 
-  const countries: CountryCount[] = [...countryCounts]
-    .map(([country, count]) => ({ country, count }))
-    .sort((a, b) => b.count - a.count || a.country.localeCompare(b.country));
+  let otherCountryListeners = 0;
+  const countries: CountryCount[] = [];
+  for (const [country, count] of countryCounts) {
+    if (count < COUNTRY_MINIMUM) {
+      otherCountryListeners += count;
+    } else {
+      countries.push({ country, count });
+    }
+  }
+  countries.sort((a, b) => b.count - a.count || a.country.localeCompare(b.country));
 
   return {
     activeListeners: total,
     updatedAt: now.toISOString(),
     ttlSeconds,
     countries,
+    otherCountryListeners,
     cities,
     topCity: cities[0] ?? null,
   };

@@ -42,8 +42,9 @@ heartbeat and nothing is lost because nothing is kept.
 ## Public output
 
 `GET /api/listeners/active` (and the committed `docs/status.json` snapshot served on GitHub Pages) returns
-only the total, per-country counts, and per-city counts for cities with at least 3 listeners at rounded
-coordinates. Individuals are never identifiable in the output.
+only the total, per-country counts for countries with at least 3 listeners (smaller ones merge into one
+`otherCountryListeners` sum), and per-city counts at rounded coordinates for cities where at least 3
+located listeners contributed to the average. Individuals are never identifiable in the output.
 
 ## Platform logs
 

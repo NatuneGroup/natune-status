@@ -694,8 +694,12 @@
     var button = document.createElement("button");
     button.type = "button";
     button.className = "location-row";
-    var name = isCountry ? countryName(location.country) : location.city;
-    var detailText = isCountry ? "Country-wide estimate" : countryName(location.country);
+    var name = isCountry ? (location.other ? "Other regions" : countryName(location.country)) : location.city;
+    var detailText = isCountry
+      ? location.other
+        ? "Countries with fewer than 3 listeners"
+        : "Country-wide estimate"
+      : countryName(location.country);
     button.setAttribute(
       "aria-label",
       name + ", " + listenerLabel(location.count) + (isCountry ? ", country estimate" : "")
@@ -761,6 +765,14 @@
             };
       locationList.appendChild(createLocationRow(rowLocation, activeTab === "countries"));
     });
+    // Countries below the publication minimum are reported only as a sum; the row is not geocoded and
+    // clicking it is a no-op.
+    var otherCount = activeTab === "countries" ? listenerCountValue(data.otherCountryListeners) : 0;
+    if (otherCount > 0) {
+      locationList.appendChild(
+        createLocationRow({ kind: "country", country: "", count: otherCount, other: true }, true)
+      );
+    }
     citiesTab.setAttribute("aria-selected", activeTab === "cities" ? "true" : "false");
     countriesTab.setAttribute("aria-selected", activeTab === "countries" ? "true" : "false");
     citiesTab.tabIndex = activeTab === "cities" ? 0 : -1;
@@ -769,7 +781,7 @@
     countriesTab.classList.toggle("is-selected", activeTab === "countries");
     locationList.setAttribute("aria-labelledby", activeTab === "cities" ? "cities-tab" : "countries-tab");
     locationList.setAttribute("aria-label", activeTab === "cities" ? "Listener cities" : "Listener countries");
-    updateEmptyState(activeListeners, rows.length, activeTab);
+    updateEmptyState(activeListeners, rows.length + (otherCount > 0 ? 1 : 0), activeTab);
     locationTotal.textContent = "(" + markerLocations.length + ")";
     citiesTabCount.textContent = "(" + cities.length + ")";
     countriesTabCount.textContent = "(" + countries.length + ")";
