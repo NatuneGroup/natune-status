@@ -4,7 +4,7 @@
 > contact of whoever runs the deployed service.
 
 Natune's listener map is opt-in. This document is the operator-side companion to the in-app disclosure and
-summarises exactly what the service at `natune-status.<account>.workers.dev` handles.
+summarises exactly what the service at `status.natune.app` handles.
 
 ## What clients send
 

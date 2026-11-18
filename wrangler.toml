@@ -4,6 +4,9 @@ compatibility_date = "2026-10-01"
 workers_dev = true
 preview_urls = false
 
+# Public API host. The map is on GitHub Pages at https://listeners.natune.app.
+routes = [{ pattern = "status.natune.app", custom_domain = true }]
+
 # Hourly sweep for rows whose TTL passed while no aggregate read ran.
 [triggers]
 crons = ["7 * * * *"]

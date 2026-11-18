@@ -126,22 +126,22 @@ npx wrangler d1 create natune-status                  # copy the printed databas
 npx wrangler d1 migrations apply natune-status --remote
 openssl rand -base64 48                               # copy the output for the next step
 npx wrangler secret put ID_HASH_SECRET
-npx wrangler deploy                                   # → https://natune-status.<account>.workers.dev
+npx wrangler deploy                                   # → https://status.natune.app (custom domain in wrangler.toml)
 ```
 
 Then:
 
-1. **Check.** `https://natune-status.<account>.workers.dev/api/listeners/active` returns
+1. **Check.** `https://status.natune.app/api/listeners/active` returns
    `{"activeListeners":0, …}`; `/` returns the service descriptor.
 2. **GitHub repo variable.** Settings → Secrets and variables → Actions → Variables:
-   `STATUS_API_URL = https://natune-status.<account>.workers.dev` (no trailing slash).
+   `STATUS_API_URL = https://status.natune.app` (no trailing slash).
 3. **Pages.** Settings → Pages → set **Source: GitHub Actions** (not "Deploy from a branch" — a
    `GITHUB_TOKEN` push never triggers a branch Pages build, so the workflow publishes `docs/` itself
    via `configure-pages` + `deploy-pages`; configure-pages can also enable Pages automatically on the
-   first run). The map goes live at `https://<org>.github.io/natune-status/`.
+   first run). The map is served at `https://listeners.natune.app` (Pages custom domain; DNS `listeners` CNAME → `natunegroup.github.io`, not proxied).
 4. **Snapshot.** Run the `Snapshot listener status` workflow once by hand (Actions → workflow → Run).
    It commits `docs/status.json` and, when the file changed, deploys `docs/` to Pages.
-5. **App builds.** Build with `ARCHIVETUNE_LISTENER_PRESENCE_URL=https://natune-status.<account>.workers.dev`
+5. **App builds.** Build with `ARCHIVETUNE_LISTENER_PRESENCE_URL=https://status.natune.app`
    (no trailing slash). Leave it empty to ship with presence inactive.
 6. **Before a public release.** Fill in the operator name in `PRIVACY.md`, review Workers Logs settings on
    the account, decide on a custom domain (`workers.dev` needs no paid add-on anyway).
